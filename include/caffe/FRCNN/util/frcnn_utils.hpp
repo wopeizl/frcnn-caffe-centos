@@ -18,6 +18,7 @@
 #include <vector>
 #include <map>
 #include <queue>
+#include <sys/time.h>
 
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -113,6 +114,9 @@ template <typename Dtype>
 void draw_bbox(cv::Mat &frame, const std::vector<BBox<Dtype> > &bboxs);
 
 float get_scale_factor(int width, int height, int short_size, int max_long_size);
+
+// debug
+double msTimer();
 
 // config
 typedef std::map<std::string, std::string> str_map;

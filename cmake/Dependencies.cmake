@@ -74,7 +74,10 @@ if(USE_LEVELDB)
 endif()
 
 # ---[ CUDA
-include(cmake/Cuda.cmake)
+if(NOT DEFINED USE_CPU)
+  include(cmake/Cuda.cmake)
+endif()
+
 if(NOT HAVE_CUDA)
   if(CPU_ONLY)
     message(STATUS "-- CUDA is disabled. Building without it...")
@@ -87,7 +90,7 @@ endif()
 
 # ---[ CUB
 if(HAVE_CUDA)
-  list(APPEND Caffe_INCLUDE_DIRS PUBLIC "/data1/zhangyuanpeng/ypzhang/workspace/cub-1.6.4/")
+  list(APPEND Caffe_INCLUDE_DIRS PUBLIC "${PROJECT_SOURCE_DIR}/../Depends/cub-1.6.4/")
 endif()
 
 if(USE_NCCL)

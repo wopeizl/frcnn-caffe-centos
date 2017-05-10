@@ -14,17 +14,26 @@ DEFINE_string(weights, "",
     "Trained Model By Faster RCNN End-to-End Pipeline.");
 DEFINE_string(default_c, "", 
     "Default config file path.");
-DEFINE_string(image_list, "", 
-    "Optional;Test images list."); 
-DEFINE_string(image_root, "", 
-    "Optional;Test images root directory."); 
+DEFINE_string(in_image, "",
+    "Optional;Test images root directory.");
+DEFINE_int32(num_image, 1,
+    "Optional;Test images number.");
 DEFINE_string(out_file, "", 
-    "Optional;Output images file."); 
-DEFINE_int32(max_per_image, 100,
-    "Limit to max_per_image detections *over all classes*");
+    "Optional;Output images file.");
 
 inline std::string INT(float x) { char A[100]; sprintf(A,"%.1f",x); return std::string(A);};
 inline std::string FloatToString(float x) { char A[100]; sprintf(A,"%.4f",x); return std::string(A);};
+
+bool isCar(int id){
+    switch(id){
+    case 6:
+        return true;
+    case 7:
+        return true;
+    default:
+        return false;
+    }
+}
 
 int main(int argc, char** argv){
   // Print output to stderr (while still logging).
@@ -39,9 +48,8 @@ int main(int argc, char** argv){
       "  --model        file    protocol buffer text file\n"
       "  --weights      file    Trained Model\n"
       "  --default_c    file    Default Config File\n"
-      "  --image_list   file    input image list\n"
-      "  --image_root   file    input image dir\n"
-      "  --max_per_image   file limit to max_per_image detections\n"
+      "  --in_image     file    input image file name\n"
+      "  --num_image    int     input image num\n"
       "  --out_file     file    output amswer file");
 
   // Run tool or show usage.
@@ -50,6 +58,9 @@ int main(int argc, char** argv){
   int gpu_id = -1;
   if( FLAGS_gpu.size() > 0 )
     gpu_id = boost::lexical_cast<int>(FLAGS_gpu);
+
+  const int num_image = FLAGS_num_image;
+  CHECK_GE(num_image, 1) << "Need > 1 input image!";
 
   if (gpu_id >= 0) {
 #ifndef CPU_ONLY
@@ -62,98 +73,80 @@ int main(int argc, char** argv){
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
 
+#ifdef _THINKPAD_
+  std::string proto_file             = "/home/ypzhang/workspace/autohome/work/online_serving/Data/test.prototxt";
+  std::string model_file             = "/home/ypzhang/workspace/autohome/work/online_serving/Data/VGG16_faster_rcnn_final.caffemodel";
+  std::string default_config_file    = "/home/ypzhang/workspace/autohome/work/online_serving/Tools/auto_caffe/examples/FRCNN/config/voc_config.json";
+
+  const std::string image1 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/more_cars.jpg";
+  const std::string image2 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/images.jpg";
+  const std::string image3 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/000456.jpg";
+  const std::string out_file = "/home/ypzhang/Desktop/try";
+#else
   std::string proto_file             = FLAGS_model.c_str();
   std::string model_file             = FLAGS_weights.c_str();
   std::string default_config_file    = FLAGS_default_c.c_str();
 
-  const std::string image_list = FLAGS_image_list.c_str();
-  const std::string image_root = FLAGS_image_root.c_str();
+  const std::string in_file = FLAGS_in_image.c_str();
   const std::string out_file = FLAGS_out_file.c_str();
+#endif
 
-  const int max_per_image = FLAGS_max_per_image;
-
+  LOG(INFO) << "proto_file: " << proto_file;
+  LOG(INFO) << "model_file: " << model_file;
+  LOG(INFO) << "in_file: " << in_file;
+  LOG(INFO) << "out_file: " << out_file;
   FRCNN_API::Detector detector(proto_file, model_file, default_config_file);
 
-  LOG(INFO) << "image list is  : " << image_list;
-  LOG(INFO) << "output file is : " << out_file;
-  LOG(INFO) << "max_per_image  : " << max_per_image;
   /// new
-  cv::Mat cv_image = cv::imread(image_list);
-  std::vector<caffe::Frcnn::BBox<float> > results;
-  detector.predict(cv_image, results);
+  /*for(int i = 0; i < 100; i++){
+      cv::Mat cv_image1 = cv::imread(image_list);
+      std::vector<caffe::Frcnn::BBox<float> > results1;
+      detector.predict(cv_image1, results1);
+  }*/
 
-  for(int ir = 0; ir < results.size(); ir++){
-      if(results[ir].confidence > 0.95
-      && results[ir].id == 7){
-          cv::Rect rect(results[ir][0], results[ir][1], results[ir][2], results[ir][3]);
-          cv::rectangle(cv_image, rect, cv::Scalar(255, 0, 0), 2);
+  std::vector<cv::Size > orig_size;
+  std::vector<cv::Mat > input_images;
+  for(int i = 0; i < num_image; i++){
+      std::stringstream filenm;
+      filenm << in_file << i << ".jpg";
 
-          std::ostringstream text;
-          text << results[ir].confidence;
-          cv::putText(cv_image
-                      , text.str()
-                      , cv::Point(rect.x, rect.y)
-                      , CV_FONT_HERSHEY_COMPLEX
-                      , 0.8
-                      , cv::Scalar(0, 255, 0));
-      }
+      cv::Mat img = cv::imread(filenm.str());
+      orig_size.push_back(img.size());
+      if(i > 0)
+          cv::resize(img, img, input_images.at(0).size());
+      input_images.push_back(img);
   }
 
-  cv::imwrite(out_file, cv_image);
-  return 0;
+  std::vector<std::vector<caffe::Frcnn::BBox<float> > > results;
+  detector.predict(input_images, results);
 
+  CHECK_EQ(results.size(), num_image);
 
-  /// old
-  std::ifstream infile(image_list.c_str());
-  std::ofstream otfile(out_file.c_str());
-  std::string hash;
-  int id;
-  while ( infile >> hash >> id ) {
-    CHECK(hash.size() > 0);
-    CHECK_EQ(hash[0], '#') << "Hash value error";
-    std::string image;   infile >> image;
-    int ignore_num;
-    infile >> ignore_num;
-    for (int index = 0; index < ignore_num; index++) {
-      int label, x1, y1, x2, y2;
-      infile >> label >> x1 >> y1 >> x2 >> y2;
-    }
-    cv::Mat cv_image = cv::imread(image_root+image);
-    std::vector<caffe::Frcnn::BBox<float> > results;
-    detector.predict(cv_image, results);
-    otfile << hash << " " << id << std::endl;
-    otfile << image << std::endl;
-    
-    float image_thresh = 0;
-    if ( max_per_image > 0 ) {
-      std::vector<float> image_score ;
-      for (size_t obj = 0; obj < results.size(); obj++) {
-        image_score.push_back(results[obj].confidence) ;
+  for(int img = 0; img < num_image; img++){
+      std::vector<caffe::Frcnn::BBox<float> > per_result = results.at(img);
+      cv::Mat image = input_images.at(img);
+      for(int ir = 0; ir < per_result.size(); ir++){
+          if(per_result[ir].confidence > 0.8
+             && isCar(per_result[ir].id)){
+              cv::Rect rect(per_result[ir][0], per_result[ir][1], per_result[ir][2], per_result[ir][3]);
+              ///cv::rectangle(cv_image, rect, cv::Scalar(255, 0, 0), 2);
+              cv::rectangle(image, cv::Point(per_result[ir][0],per_result[ir][1])
+                           , cv::Point(per_result[ir][2],per_result[ir][3]), cv::Scalar(255, 0, 0));
+
+              std::ostringstream text;
+              text << per_result[ir].confidence;
+              cv::putText(image
+                          , text.str()
+                          , cv::Point(rect.x, rect.y)
+                          , CV_FONT_HERSHEY_COMPLEX
+                          , 0.8
+                          , cv::Scalar(0, 255, 0));
+          }
       }
-      std::sort(image_score.begin(), image_score.end(), std::greater<float>());
-      if ( max_per_image > image_score.size() ) {
-        if ( image_score.size() > 0 ) 
-          image_thresh = image_score.back();
-      } else {
-        image_thresh = image_score[max_per_image-1];
-      }
-    }
-    std::vector<caffe::Frcnn::BBox<float> > filtered_res;
-    for (size_t obj = 0; obj < results.size(); obj++) {
-      if ( results[obj].confidence >= image_thresh ) {
-        filtered_res.push_back( results[obj] );
-      }
-    }
-    const int ori_res_size = results.size();
-    results = filtered_res;
-    
-    otfile << results.size() << std::endl;
-    for (size_t obj = 0; obj < results.size(); obj++) {
-      otfile << results[obj].id << "  " << INT(results[obj][0]) << " " << INT(results[obj][1]) << " " << INT(results[obj][2]) << " " << INT(results[obj][3]) << "     " << FloatToString(results[obj].confidence) << std::endl;
-    }
-    LOG(INFO) << "Handle " << id << " th image : " << image << ", with image_thresh : " << image_thresh << ", " << ori_res_size << " -> " << results.size() << " boxes";
+      cv::resize(image, image, orig_size.at(img));
+      std::stringstream filenm;
+      filenm << out_file << img << ".jpg";
+      cv::imwrite(filenm.str(), image);
   }
-  infile.close();
-  otfile.close();
   return 0;
 }

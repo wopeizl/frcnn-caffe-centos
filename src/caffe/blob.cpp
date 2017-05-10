@@ -1,5 +1,8 @@
 #include <climits>
 #include <vector>
+#include "fstream"
+#include "sstream"
+#include "iostream"
 
 #include "caffe/blob.hpp"
 #include "caffe/common.hpp"
@@ -561,6 +564,23 @@ void Blob<float>::ToProto(BlobProto* proto, bool write_diff) const {
       proto->add_diff(diff_vec[i]);
     }
   }
+}
+
+template <typename Dtype>
+void Blob<Dtype>::WriteTxtTo(std::string filenm){
+    FILE* fp = NULL;
+    if((fp = fopen(filenm.c_str(), "wt")) == NULL)
+        LOG(ERROR) << "Can't open file [" << filenm << "]!";
+
+    std::stringstream output;
+    output << "Blob shape:" << std::endl << shape_string() << std::endl;
+    for(int i = 0; i < count(); i++){
+        output << cpu_data()[i] << " ";
+        if(i % 20 == 0)
+            output << std::endl;
+    }
+    fprintf(fp, "%s\n", output.str().c_str());
+    fclose(fp);
 }
 
 INSTANTIATE_CLASS(Blob);

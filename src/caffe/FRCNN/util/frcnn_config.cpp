@@ -8,6 +8,12 @@ namespace caffe {
 
 namespace Frcnn {
 
+double msTimer(){
+    struct timeval tv;
+    gettimeofday(&tv, NULL);
+    return tv.tv_sec * 1000. + tv.tv_usec / 1000.;
+}
+
 std::vector<std::string> &split(const std::string &s, char delim,
     std::vector<std::string> &elems) {
   std::stringstream ss(s);

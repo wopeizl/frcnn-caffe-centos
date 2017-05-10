@@ -52,7 +52,7 @@ void SplitConcatLayer<Dtype>::Backward_cpu(const vector<Blob<Dtype>*>& top,
 }
 
 #ifdef CPU_ONLY
-STUB_GPU(SplitConcatLayer);
+///STUB_GPU(SplitConcatLayer);
 #endif
 
 INSTANTIATE_CLASS(SplitConcatLayer);

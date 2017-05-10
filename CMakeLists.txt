@@ -26,8 +26,19 @@ include(cmake/Summary.cmake)
 include(cmake/ConfigGen.cmake)
 
 # ---[ Options
-caffe_option(CPU_ONLY  "Build Caffe without CUDA support" OFF) # TODO: rename to USE_CUDA
-caffe_option(USE_CUDNN "Build Caffe with cuDNN library support" ON IF NOT CPU_ONLY)
+if(NOT DEFINED CMAKE_BUILD_TYPE )
+  set( CMAKE_BUILD_TYPE "Release" CACHE STRING "Release or Debug" )
+endif()
+
+if(DEFINED USE_CPU)
+  caffe_option(CPU_ONLY  "Build Caffe without CUDA support" ON) # TODO: rename to USE_CUDA
+  caffe_option(USE_CUDNN "Build Caffe with cuDNN library support" OFF)
+  caffe_option(HAVE_CUDA " " OFF)
+else()
+  caffe_option(CPU_ONLY  "Build Caffe without CUDA support" OFF) # TODO: rename to USE_CUDA
+  caffe_option(USE_CUDNN "Build Caffe with cuDNN library support" ON IF NOT CPU_ONLY)
+endif()
+
 caffe_option(USE_NCCL "Build Caffe with NCCL library support" OFF)
 caffe_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 caffe_option(BUILD_python "Build Python wrapper" ON)
@@ -39,7 +50,7 @@ caffe_option(USE_OPENCV "Build with OpenCV support" ON)
 caffe_option(USE_LEVELDB "Build with levelDB" ON)
 caffe_option(USE_LMDB "Build with lmdb" ON)
 caffe_option(ALLOW_LMDB_NOLOCK "Allow MDB_NOLOCK when reading LMDB files (only if necessary)" OFF)
-caffe_option(USE_OPENMP "Link with OpenMP (when your BLAS wants OpenMP and you get linker errors)" ON)
+caffe_option(USE_OPENMP "Link with OpenMP (when your BLAS wants OpenMP and you get linker errors)" OFF)
 
 # ---[ Dependencies
 include(cmake/Dependencies.cmake)
