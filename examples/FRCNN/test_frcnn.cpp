@@ -24,17 +24,6 @@ DEFINE_string(out_file, "",
 inline std::string INT(float x) { char A[100]; sprintf(A,"%.1f",x); return std::string(A);};
 inline std::string FloatToString(float x) { char A[100]; sprintf(A,"%.4f",x); return std::string(A);};
 
-bool isCar(int id){
-    switch(id){
-    case 6:
-        return true;
-    case 7:
-        return true;
-    default:
-        return false;
-    }
-}
-
 int main(int argc, char** argv){
   // Print output to stderr (while still logging).
   FLAGS_alsologtostderr = 1;
@@ -57,10 +46,7 @@ int main(int argc, char** argv){
   CHECK( FLAGS_gpu.size() == 0 || FLAGS_gpu.size() == 1 ) << "Can only support one gpu or none";
   int gpu_id = -1;
   if( FLAGS_gpu.size() > 0 )
-    gpu_id = boost::lexical_cast<int>(FLAGS_gpu);
-
-  const int num_image = FLAGS_num_image;
-  CHECK_GE(num_image, 1) << "Need > 1 input image!";
+    gpu_id = boost::lexical_cast<int>(FLAGS_gpu);  
 
   if (gpu_id >= 0) {
 #ifndef CPU_ONLY
@@ -74,15 +60,22 @@ int main(int argc, char** argv){
   }
 
 #ifdef _THINKPAD_
-  std::string proto_file             = "/home/ypzhang/workspace/autohome/work/online_serving/Data/test.prototxt";
-  std::string model_file             = "/home/ypzhang/workspace/autohome/work/online_serving/Data/VGG16_faster_rcnn_final.caffemodel";
-  std::string default_config_file    = "/home/ypzhang/workspace/autohome/work/online_serving/Tools/auto_caffe/examples/FRCNN/config/voc_config.json";
+  const int num_image = 3;
+  std::string proto_file = "/home/ypzhang/workspace/autohome/work/other/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_end2end_2class_prune/test.prototxt";
+  std::string model_file = "/home/ypzhang/workspace/autohome/work/other/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_end2end_2class_prune/vgg16_faster_rcnn_2class_prune_iter_70000.caffemodel";
+  ///std::string proto_file             = "/home/ypzhang/Desktop/model/try.prototxt";
+  ///std::string model_file             = "/home/ypzhang/Desktop/model/try.weight";
+  std::string default_config_file    = "/home/ypzhang/workspace/autohome/work/online_serving/Tools/auto_caffe/examples/FRCNN/config/voc_config_2class.json";
 
-  const std::string image1 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/more_cars.jpg";
-  const std::string image2 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/images.jpg";
-  const std::string image3 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/000456.jpg";
+  const std::string in_file = "/home/ypzhang/workspace/autohome/work/online_serving/Data/";
+  //const std::string image1 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/more_cars.jpg";
+  //const std::string image2 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/images.jpg";
+  //const std::string image3 = "/home/ypzhang/workspace/autohome/work/online_serving/Data/000456.jpg";
   const std::string out_file = "/home/ypzhang/Desktop/try";
 #else
+  const int num_image = FLAGS_num_image;
+  CHECK_GE(num_image, 1) << "Need > 1 input image!";
+
   std::string proto_file             = FLAGS_model.c_str();
   std::string model_file             = FLAGS_weights.c_str();
   std::string default_config_file    = FLAGS_default_c.c_str();
@@ -126,8 +119,7 @@ int main(int argc, char** argv){
       std::vector<caffe::Frcnn::BBox<float> > per_result = results.at(img);
       cv::Mat image = input_images.at(img);
       for(int ir = 0; ir < per_result.size(); ir++){
-          if(per_result[ir].confidence > 0.8
-             && isCar(per_result[ir].id)){
+          if(per_result[ir].confidence > 0.8){
               cv::Rect rect(per_result[ir][0], per_result[ir][1], per_result[ir][2], per_result[ir][3]);
               ///cv::rectangle(cv_image, rect, cv::Scalar(255, 0, 0), 2);
               cv::rectangle(image, cv::Point(per_result[ir][0],per_result[ir][1])

@@ -147,7 +147,7 @@ void Detector::predict(const std::vector<cv::Mat >& img_in, std::vector<std::vec
 
     const int box_num = bbox_pred->num();
     const int cls_num = cls_prob->channels();
-    CHECK_EQ(cls_num , caffe::Frcnn::FrcnnParam::n_classes);
+    ///CHECK_EQ(cls_num , caffe::Frcnn::FrcnnParam::n_classes);
     CHECK_EQ(box_num, cls_prob->num()) << "BBox num != cls num?";
     CHECK_EQ(box_num, rois->num()) << "Rois num != BBox num?";
     CHECK_EQ(box_num % nmat_, 0) << " BBox num % nmat != 0?";

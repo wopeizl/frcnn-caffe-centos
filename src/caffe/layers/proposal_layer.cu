@@ -174,7 +174,8 @@ void ProposalLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   top[0]->Reshape(top_shape);
 
   Dtype* p_roi_item = top[0]->mutable_gpu_data();
-  Dtype* p_score_item = top[1]->mutable_gpu_data();
+  Dtype* p_score_item = NULL;
+  if (top.size() > 1) p_score_item = top[1]->mutable_cpu_data();
 
   vector<int> proposals_shape(2);
   proposals_shape[0] = 0;

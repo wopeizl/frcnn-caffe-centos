@@ -90,7 +90,7 @@ endif()
 
 # ---[ CUB
 if(HAVE_CUDA)
-  list(APPEND Caffe_INCLUDE_DIRS PUBLIC "${PROJECT_SOURCE_DIR}/../Depends/cub-1.6.4/")
+  list(APPEND Caffe_INCLUDE_DIRS PUBLIC "${PROJECT_SOURCE_DIR}/../../Depends/cub-1.6.4/")
 endif()
 
 if(USE_NCCL)
