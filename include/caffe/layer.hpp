@@ -291,8 +291,19 @@ class Layer {
     param_propagate_down_[param_id] = value;
   }
 
-
+  /*****************add for pruning******************/
+  inline int layer_type() { return layer_type_; }
+  inline int layer_id() { return layer_id_; }
+  inline void set_layer_type(int type) { layer_type_ = type; }
+  inline void set_layer_id(int id) { layer_id_ = id; }
+  /**************************************************/
  protected:
+  /*****************add for pruning******************/
+  /**the type of the layer.0 - fcLayer,1 - convLayer**/
+  int layer_type_;
+  /**the index int the same type of layers**/
+  int layer_id_;
+  /**************************************************/
   /** The protobuf that stores the layer parameters */
   LayerParameter layer_param_;
   /** The phase: TRAIN or TEST */

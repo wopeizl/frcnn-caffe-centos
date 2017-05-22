@@ -117,6 +117,37 @@ void Net<Dtype>::Init(const NetParameter& in_param) {
         AppendTop(param, layer_id, num_top, NULL, NULL);
       }
     }
+    /*****************add for pruning***********************/
+    string fc_start("fc6");
+    string fc("InnerProduct");
+    static int fc_id = 1;
+    const int fc_type = 1;
+    if(layer_param.name() == fc_start)
+    {
+      fc_id = 1;
+    }
+    if(layer_param.type() == fc)
+    {
+      LOG(INFO)<<"FC layer: type = "<<fc_type<<" id = "<<fc_id;
+      layers_[layer_id]->set_layer_type(fc_type);
+      layers_[layer_id]->set_layer_id(fc_id++);
+    }
+
+    string conv_start("conv1_1");
+    string conv("Convolution");
+    static int conv_id = 1;
+    const int conv_type = 2;
+    if(layer_param.name() == conv_start)
+    {
+      conv_id = 1;
+    }
+    if(layer_param.type() == conv)
+    {
+      LOG(INFO)<<"Conv layer: type = "<<conv_type<<" id = "<<conv_id;
+      layers_[layer_id]->set_layer_type(conv_type);
+      layers_[layer_id]->set_layer_id(conv_id++);
+    }
+    /*******************************************************/
     // After this layer is connected, set it up.
     layers_[layer_id]->SetUp(bottom_vecs_[layer_id], top_vecs_[layer_id]);
     LOG_IF(INFO, Caffe::root_solver())

@@ -62,6 +62,86 @@ void caffe_gpu_gemv<double>(const CBLAS_TRANSPOSE TransA, const int M,
       A, N, x, 1, &beta, y, 1));
 }
 
+/**********************add for pruning************************/
+template <>
+void caffe_gpu_csrmm<float>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const float alpha, const float* A, const float * csrval,const int * csrrowptr,const int * csrcolind,const int nnz, const float beta,
+    float* C) {
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+
+  cusparseOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUSPARSE_OPERATION_NON_TRANSPOSE:CUSPARSE_OPERATION_TRANSPOSE;
+  cusparseOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUSPARSE_OPERATION_NON_TRANSPOSE:CUSPARSE_OPERATION_TRANSPOSE;
+  cuTransB = CUSPARSE_OPERATION_NON_TRANSPOSE;
+  cusparseScsrmm(Caffe::cusparse_handle(),cuTransB,N,M,K,nnz,&alpha,Caffe::cusparse_MatDescr(),csrval,csrrowptr,csrcolind,A,lda,&beta,C,N);
+}
+
+template <>
+void caffe_gpu_csrmm<double>(const CBLAS_TRANSPOSE TransA,
+    const CBLAS_TRANSPOSE TransB, const int M, const int N, const int K,
+    const double alpha, const double* A, const double * csrval,const int * csrrowptr,const int * csrcolind,const int nnz, const double beta,
+    double* C) {
+  // Note that cublas follows fortran order.
+  int lda = (TransA == CblasNoTrans) ? K : M;
+  int ldb = (TransB == CblasNoTrans) ? N : K;
+  cusparseOperation_t cuTransA =
+      (TransA == CblasNoTrans) ? CUSPARSE_OPERATION_NON_TRANSPOSE:CUSPARSE_OPERATION_TRANSPOSE;
+  cusparseOperation_t cuTransB =
+      (TransB == CblasNoTrans) ? CUSPARSE_OPERATION_NON_TRANSPOSE:CUSPARSE_OPERATION_TRANSPOSE;
+
+  cuTransB = CUSPARSE_OPERATION_NON_TRANSPOSE;
+
+  cusparseDcsrmm(Caffe::cusparse_handle(),cuTransB,N,M,K,nnz,&alpha,Caffe::cusparse_MatDescr(),csrval,csrrowptr,csrcolind,A,lda,&beta,C,N);
+}
+
+template <>
+void caffe_gpu_csrmv<float>(const CBLAS_TRANSPOSE TransA,const int M,const int N,const float alpha,const float * csrval,const int * csrrowptr,const int * csrcolind,const int nnz,const float * x,const float beta,float * y)
+{
+  cusparseOperation_t cuTransA = (TransA==CblasNoTrans)?CUSPARSE_OPERATION_NON_TRANSPOSE:CUSPARSE_OPERATION_TRANSPOSE;
+  /*
+  cusparseHandle_t cphandle;
+  cusparseCreate(&cphandle);
+  cusparseMatDescr_t descrA;
+  cusparseCreateMatDescr(&descrA);
+  cusparseSetMatType(descrA,CUSPARSE_MATRIX_TYPE_GENERAL);
+  cusparseSetMatIndexBase(descrA,CUSPARSE_INDEX_BASE_ZERO);
+  */
+  //cusparseScsrmv(cphandle,cuTransA,M,N,nnz,&alpha,descrA,csrval,csrrowptr,csrcolind,x,&beta,y);
+  cusparseScsrmv(Caffe::cusparse_handle(),cuTransA,M,N,nnz,&alpha,Caffe::cusparse_MatDescr(),csrval,csrrowptr,csrcolind,x,&beta,y);
+
+  /*
+  cudaDeviceSynchronize();
+  cusparseDestroyMatDescr(descrA);
+  cusparseDestroy(cphandle);
+  */
+}
+
+template <>
+void caffe_gpu_csrmv<double>(const CBLAS_TRANSPOSE TransA,const int M,const int N,const double alpha,const double * csrval,const int * csrrowptr,const int * csrcolind,const int nnz,const double * x,const double beta,double * y)
+{
+  cusparseOperation_t cuTransA = (TransA==CblasNoTrans)?CUSPARSE_OPERATION_NON_TRANSPOSE:CUSPARSE_OPERATION_TRANSPOSE;
+  /*
+  cusparseHandle_t cphandle;
+  cusparseCreate(&cphandle);
+  cusparseMatDescr_t descrA;
+  cusparseCreateMatDescr(&descrA);
+  cusparseSetMatType(descrA,CUSPARSE_MATRIX_TYPE_GENERAL);
+  cusparseSetMatIndexBase(descrA,CUSPARSE_INDEX_BASE_ZERO);
+  */
+  //cusparseDcsrmv(cphandle,cuTransA,M,N,nnz,&alpha,descrA,csrval,csrrowptr,csrcolind,x,&beta,y);
+  cusparseDcsrmv(Caffe::cusparse_handle(),cuTransA,M,N,nnz,&alpha,Caffe::cusparse_MatDescr(),csrval,csrrowptr,csrcolind,x,&beta,y);
+  /*
+  cudaDeviceSynchronize();
+  cusparseDestroyMatDescr(descrA);
+  cusparseDestroy(cphandle);
+  */
+}
+
+/**************************************************************/
 template <>
 void caffe_gpu_axpy<float>(const int N, const float alpha, const float* X,
     float* Y) {

@@ -5,7 +5,9 @@
 #include "caffe/util/math_functions.hpp"
 
 namespace caffe {
-
+/***************************add for pruning****************************/
+extern int step;
+/**********************************************************************/
 template <typename Dtype>
 void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const vector<Blob<Dtype>*>& top) {
@@ -13,12 +15,55 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   Dtype* top_data = top[0]->mutable_gpu_data();
   const Dtype* weight = this->blobs_[0]->gpu_data();
   if (M_ == 1) {
+    /***************************add for pruning****************************/
+    if(step == 101 && (this->layer_id_>=1 && this->layer_id_<=2))
+    {
+      const Dtype * csrval = this->blobs_[0]->gpu_csrval();
+      const int * csrrowptr = this->blobs_[0]->gpu_csrrowptr();
+      const int * csrcolind = this->blobs_[0]->gpu_csrcolind();
+      const int nnz = this->blobs_[0]->nnz();
+      caffe_gpu_csrmv<Dtype>(CblasNoTrans,N_,K_,(Dtype)1.,csrval,csrrowptr,csrcolind,nnz,bottom_data,(Dtype)0.,top_data);
+
+      if (bias_term_)
+        caffe_gpu_axpy<Dtype>(N_, bias_multiplier_.cpu_data()[0],
+                              this->blobs_[1]->gpu_data(), top_data);
+    }
+    else
+    {
+    /**********************************************************************/
     caffe_gpu_gemv<Dtype>(CblasNoTrans, N_, K_, (Dtype)1.,
                          weight, bottom_data, (Dtype)0., top_data);
     if (bias_term_)
       caffe_gpu_axpy<Dtype>(N_, bias_multiplier_.cpu_data()[0],
                             this->blobs_[1]->gpu_data(), top_data);
+    /***************************add for pruning****************************/
+    }
+    /**********************************************************************/
   } else {
+    /***************************add for pruning****************************/
+    if(step == 101 && (this->layer_id_>=1 && this->layer_id_<=2))
+    {
+      const Dtype * csrval = this->blobs_[0]->gpu_csrval();
+      const int * csrrowptr = this->blobs_[0]->gpu_csrrowptr();
+      const int * csrcolind = this->blobs_[0]->gpu_csrcolind();
+      const int nnz = this->blobs_[0]->nnz();
+
+      const Dtype * host_csrval = this->blobs_[0]->cpu_csrval();
+
+      //LOG(INFO) << "ip layers NNZ = "<<nnz<<" csrval "<<host_csrval[0]<<" "<<host_csrval[1]<<" "<<host_csrval[nnz-2]<<" "<<host_csrval[nnz-1];
+
+      caffe_gpu_csrmm<Dtype>(CblasNoTrans,
+                            CblasTrans,
+                            M_, N_, K_, (Dtype)1.,
+                            bottom_data, csrval, csrrowptr, csrcolind, nnz, (Dtype)0., top_data);
+      if (bias_term_)
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, (Dtype)1.,
+                              bias_multiplier_.gpu_data(),
+                              this->blobs_[1]->gpu_data(), (Dtype)1., top_data);
+    }
+    else
+    {
+    /**********************************************************************/
     caffe_gpu_gemm<Dtype>(CblasNoTrans,
                           transpose_ ? CblasNoTrans : CblasTrans,
                           M_, N_, K_, (Dtype)1.,
@@ -27,6 +72,9 @@ void InnerProductLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
       caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, 1, (Dtype)1.,
                             bias_multiplier_.gpu_data(),
                             this->blobs_[1]->gpu_data(), (Dtype)1., top_data);
+    /***************************add for pruning****************************/
+    }
+    /**********************************************************************/
   }
 }
 

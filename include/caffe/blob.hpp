@@ -24,7 +24,11 @@ template <typename Dtype>
 class Blob {
  public:
   Blob()
-       : data_(), diff_(), count_(0), capacity_(0) {}
+       : data_()
+       , diff_()
+       , mask_()
+       , count_(0)
+       , capacity_(0){}
 
   /// @brief Deprecated; use <code>Blob(const vector<int>& shape)</code>.
   explicit Blob(const int num, const int channels, const int height,
@@ -268,11 +272,69 @@ class Blob {
   void ShareDiff(const Blob& other);
 
   bool ShapeEquals(const BlobProto& other);
+  /****************add for pruning*******************/
+  inline int layer_type() { return layer_type_; }
+  inline int layer_id() { return layer_id_; }
+  inline int blob_id() { return blob_id_; }
+  inline int nnz() { return nnz_; }
+  inline void set_layer_type(int type) { layer_type_ = type; }
+  inline void set_layer_id(int id) { layer_id_ = id; }
+  inline void set_blob_id(int id) { blob_id_ = id; }
+  inline void set_nnz(int nnz){ nnz_ = nnz; }
+ 
+  inline const shared_ptr<SyncedMemory>& mask() const {
+    CHECK(mask_);
+    return mask_;
+  }
+  inline const shared_ptr<SyncedMemory>& csrval() const {
+    CHECK(csrval_);
+    return csrval_;
+  }
+  inline const shared_ptr<SyncedMemory>& csrrowptr() const {
+    CHECK(csrrowptr_);
+    return csrrowptr_;
+  }
+  inline const shared_ptr<SyncedMemory>& csrcolind() const {
+    CHECK(csrcolind_);
+    return csrcolind_;
+  }
 
+  void set_cpu_mask(Dtype* mask);
+  const Dtype* cpu_mask() const;
+  const Dtype* gpu_mask() const;
+  Dtype* mutable_cpu_mask();
+  Dtype* mutable_gpu_mask();
+
+  const Dtype* cpu_csrval() const;
+  const Dtype* gpu_csrval() const;
+  Dtype* mutable_cpu_csrval();
+  Dtype* mutable_gpu_csrval();
+
+  const int * cpu_csrrowptr() const;
+  const int * gpu_csrrowptr() const;
+  int * mutable_cpu_csrrowptr();
+  int * mutable_gpu_csrrowptr();
+
+  const int * cpu_csrcolind() const;
+  const int * gpu_csrcolind() const;
+  int * mutable_cpu_csrcolind();
+  int * mutable_gpu_csrcolind();
+  /**************************************************/
  protected:
   shared_ptr<SyncedMemory> data_;
   shared_ptr<SyncedMemory> diff_;
   shared_ptr<SyncedMemory> shape_data_;
+  /****************add for pruning*******************/
+  shared_ptr<SyncedMemory> mask_;
+  shared_ptr<SyncedMemory> csrval_;
+  shared_ptr<SyncedMemory> csrrowptr_;
+  shared_ptr<SyncedMemory> csrcolind_;
+
+  int nnz_;
+  int layer_type_;
+  int layer_id_;
+  int blob_id_;
+  /**************************************************/
   vector<int> shape_;
   int count_;
   int capacity_;

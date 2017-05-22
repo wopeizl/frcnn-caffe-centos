@@ -136,6 +136,11 @@ class Caffe {
   inline static curandGenerator_t curand_generator() {
     return Get().curand_generator_;
   }
+  /***********************add for pruning***************************/
+  inline static cusparseHandle_t cusparse_handle() { return Get().cusparse_handle_; }
+  inline static cusparseMatDescr_t cusparse_MatDescr() { return Get().cusparse_MatDescr_; }
+  /*****************************************************************/
+
 #endif
 
   // Returns the mode: running on CPU or GPU.
@@ -180,6 +185,12 @@ class Caffe {
   int solver_count_;
   int solver_rank_;
   bool multiprocess_;
+  /**********************add for pruning*********************/
+#ifndef CPU_ONLY
+  cusparseMatDescr_t cusparse_MatDescr_;
+  cusparseHandle_t cusparse_handle_;
+#endif
+  /**********************************************************/
 
  private:
   // The private constructor to avoid duplicate instantiation.

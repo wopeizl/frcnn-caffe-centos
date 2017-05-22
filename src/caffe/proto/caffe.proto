@@ -13,7 +13,15 @@ message BlobProto {
   repeated float diff = 6 [packed = true];
   repeated double double_data = 8 [packed = true];
   repeated double double_diff = 9 [packed = true];
+  //add for pruning///////////////////////////////////
+  repeated float mask = 10 [packed = true];
+  repeated double double_mask = 11 [packed = true];
+  repeated float csrval = 13 [packed = true];
+  repeated int32 csrrowptr = 14 [packed = true];
+  repeated int32 csrcolind = 15 [packed = true];
 
+  optional int32 nnz = 12 [default = 0];
+  ///////////////////////////////////////////////////
   // 4D dimensions -- deprecated.  Use "shape" instead.
   optional int32 num = 1 [default = 0];
   optional int32 channels = 2 [default = 0];
@@ -764,6 +772,7 @@ message DataParameter {
 
 message DropoutParameter {
   optional float dropout_ratio = 1 [default = 0.5]; // dropout ratio
+  optional bool scale_train = 2 [default = true];  // scale train or test phase
 }
 
 // DummyDataLayer fills any number of arbitrarily shaped blobs with random

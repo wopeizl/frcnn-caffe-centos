@@ -105,7 +105,7 @@ void* Caffe::RNG::generator() {
 #else  // Normal GPU + CPU Caffe.
 
 Caffe::Caffe()
-    : cublas_handle_(NULL), curand_generator_(NULL), random_generator_(),
+    : cublas_handle_(NULL), curand_generator_(NULL), cusparse_handle_(NULL), cusparse_MatDescr_(NULL), random_generator_(),
     mode_(Caffe::CPU),
     solver_count_(1), solver_rank_(0), multiprocess_(false) {
   // Try to create a cublas handler, and report an error if failed (but we will
@@ -120,6 +120,20 @@ Caffe::Caffe()
       != CURAND_STATUS_SUCCESS) {
     LOG(ERROR) << "Cannot create Curand generator. Curand won't be available.";
   }
+  /********************add for pruning*******************/
+  if(cusparseCreate(&cusparse_handle_) != CUSPARSE_STATUS_SUCCESS)
+  {
+    LOG(ERROR) << "Cannot create Cusparse handle. Cusparse won't be available.";
+  }
+
+  if(cusparseCreateMatDescr(&cusparse_MatDescr_) != CUSPARSE_STATUS_SUCCESS)
+  {
+    LOG(ERROR) << "Cannot create MatDescr. MatDescr won't be available.";
+  }
+
+  cusparseSetMatType(cusparse_MatDescr_,CUSPARSE_MATRIX_TYPE_GENERAL);
+  cusparseSetMatIndexBase(cusparse_MatDescr_,CUSPARSE_INDEX_BASE_ZERO);
+  /******************************************************/
 }
 
 Caffe::~Caffe() {
@@ -127,6 +141,16 @@ Caffe::~Caffe() {
   if (curand_generator_) {
     CURAND_CHECK(curandDestroyGenerator(curand_generator_));
   }
+  /*******************add for pruning************************/
+  if (cusparse_MatDescr_)
+  {
+    cusparseDestroyMatDescr(cusparse_MatDescr_);
+  }
+  if (cusparse_handle_)
+  {
+    cusparseDestroy(cusparse_handle_);
+  }
+  /**********************************************************/
 }
 
 void Caffe::set_random_seed(const unsigned int seed) {
@@ -165,6 +189,21 @@ void Caffe::SetDevice(const int device_id) {
       CURAND_RNG_PSEUDO_DEFAULT));
   CURAND_CHECK(curandSetPseudoRandomGeneratorSeed(Get().curand_generator_,
       cluster_seedgen()));
+  /**********************add for pruning*******************/
+  if (Get().cusparse_handle_)
+  {
+    cusparseDestroy(Get().cusparse_handle_);
+  }
+  if (Get().cusparse_MatDescr_)
+  {
+    cusparseDestroyMatDescr(Get().cusparse_MatDescr_);
+  }
+
+  cusparseCreate(&Get().cusparse_handle_);
+  cusparseCreateMatDescr(&Get().cusparse_MatDescr_);
+  cusparseSetMatType(Get().cusparse_MatDescr_,CUSPARSE_MATRIX_TYPE_GENERAL);
+  cusparseSetMatIndexBase(Get().cusparse_MatDescr_,CUSPARSE_INDEX_BASE_ZERO);
+  /********************************************************/
 }
 
 void Caffe::DeviceQuery() {

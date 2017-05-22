@@ -52,6 +52,14 @@ void InnerProductLayer<Dtype>::LayerSetUp(const vector<Blob<Dtype>*>& bottom,
     }
   }  // parameter initialization
   this->param_propagate_down_.resize(this->blobs_.size(), true);
+  /*******************add for pruning*************************/
+  for(int i = 0;i < this->blobs_.size();i++)
+  {
+    this->blobs_[i]->set_layer_type(this->layer_type());
+    this->blobs_[i]->set_layer_id(this->layer_id());
+    this->blobs_[i]->set_blob_id(i);
+  }
+  /***********************************************************/
 }
 
 template <typename Dtype>

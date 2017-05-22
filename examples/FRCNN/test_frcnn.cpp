@@ -21,6 +21,7 @@ DEFINE_int32(num_image, 1,
 DEFINE_string(out_file, "", 
     "Optional;Output images file.");
 
+
 inline std::string INT(float x) { char A[100]; sprintf(A,"%.1f",x); return std::string(A);};
 inline std::string FloatToString(float x) { char A[100]; sprintf(A,"%.4f",x); return std::string(A);};
 
@@ -61,10 +62,10 @@ int main(int argc, char** argv){
 
 #ifdef _THINKPAD_
   const int num_image = 3;
-  std::string proto_file = "/home/ypzhang/workspace/autohome/work/other/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_end2end_2class_prune/test.prototxt";
-  std::string model_file = "/home/ypzhang/workspace/autohome/work/other/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_end2end_2class_prune/vgg16_faster_rcnn_2class_prune_iter_70000.caffemodel";
-  ///std::string proto_file             = "/home/ypzhang/Desktop/model/try.prototxt";
-  ///std::string model_file             = "/home/ypzhang/Desktop/model/try.weight";
+  //std::string proto_file = "/home/ypzhang/workspace/autohome/work/other/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_end2end_2class_prune/test.prototxt";
+  //std::string model_file = "/home/ypzhang/workspace/autohome/work/other/py-faster-rcnn/models/pascal_voc/VGG16/faster_rcnn_end2end_2class_prune/vgg16_faster_rcnn_2class_prune_iter_70000.caffemodel";
+  std::string proto_file             = "/home/ypzhang/Desktop/debug_zf_prune/auto_test.prototxt";
+  std::string model_file             = "/home/ypzhang/Desktop/debug_zf_prune/zf_faster_rcnn_2class_prune_iter_70000.caffemodel";
   std::string default_config_file    = "/home/ypzhang/workspace/autohome/work/online_serving/Tools/auto_caffe/examples/FRCNN/config/voc_config_2class.json";
 
   const std::string in_file = "/home/ypzhang/workspace/autohome/work/online_serving/Data/";
@@ -119,7 +120,7 @@ int main(int argc, char** argv){
       std::vector<caffe::Frcnn::BBox<float> > per_result = results.at(img);
       cv::Mat image = input_images.at(img);
       for(int ir = 0; ir < per_result.size(); ir++){
-          if(per_result[ir].confidence > 0.8){
+          if(per_result[ir].confidence > 0.9){
               cv::Rect rect(per_result[ir][0], per_result[ir][1], per_result[ir][2], per_result[ir][3]);
               ///cv::rectangle(cv_image, rect, cv::Scalar(255, 0, 0), 2);
               cv::rectangle(image, cv::Point(per_result[ir][0],per_result[ir][1])
